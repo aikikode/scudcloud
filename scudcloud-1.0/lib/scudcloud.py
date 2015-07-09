@@ -54,6 +54,7 @@ class ScudCloud(QtGui.QMainWindow):
         self.setCentralWidget(centralWidget)
         self.addMenu()
         self.tray = Systray(self)
+        self.tray.show()
         self.systray(ScudCloud.minimized)
         self.installEventFilter(self)
         if self.identifier is None:
@@ -96,11 +97,9 @@ class ScudCloud(QtGui.QMainWindow):
         if show is None:
             show = self.settings.value('Systray') == 'True'
         if show:
-            self.tray.show()
             self.menus['file']['close'].setEnabled(True)
             self.settings.setValue('Systray', 'True')
         else:
-            self.tray.setVisible(False)
             self.menus['file']['close'].setEnabled(False)
             self.settings.setValue('Systray', 'False')
 
@@ -110,7 +109,7 @@ class ScudCloud(QtGui.QMainWindow):
             default = float(self.settings.value('Zoom'))
         return default
 
-    def setZoom(self, factor=1):
+    def setZoom(self, factor=1.):
         if factor > 0:
             for i in range(0, self.stackedWidget.count()):
                 widget = self.stackedWidget.widget(i)

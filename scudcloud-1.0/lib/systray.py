@@ -4,7 +4,6 @@ from resources import Resources
 
 
 class Systray(QtGui.QSystemTrayIcon):
-
     urgent = False
 
     def __init__(self, window):
@@ -13,7 +12,7 @@ class Systray(QtGui.QSystemTrayIcon):
         self.window = window
         self.setToolTip(Resources.APP_NAME)
         self.menu = QtGui.QMenu(self.window)
-        self.menu.addAction('Show', self.restore)
+        self.menu.addAction('Show/Hide', self.toggle)
         self.menu.addSeparator()
         self.menu.addAction(self.window.menus['file']['preferences'])
         self.menu.addAction(self.window.menus['help']['about'])
@@ -45,9 +44,12 @@ class Systray(QtGui.QSystemTrayIcon):
         self.window.show()
         self.stopAlert()
 
+    def toggle(self):
+        if self.window.isHidden() or self.window.isMinimized() or not self.window.isActiveWindow():
+            self.restore()
+        else:
+            self.window.hide()
+
     def activatedEvent(self, reason):
         if reason in [QtGui.QSystemTrayIcon.MiddleClick, QtGui.QSystemTrayIcon.Trigger]:
-            if self.window.isHidden() or self.window.isMinimized() or not self.window.isActiveWindow():
-                self.restore()
-            else:
-                self.window.hide()
+            self.toggle()
