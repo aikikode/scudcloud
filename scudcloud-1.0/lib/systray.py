@@ -7,8 +7,8 @@ class Systray(QtGui.QSystemTrayIcon):
     urgent = False
 
     def __init__(self, window):
-        super(Systray, self).__init__(QtGui.QIcon().fromTheme('scudcloud'), window)
-        self.connect(self, QtCore.SIGNAL('activated(QSystemTrayIcon::ActivationReason)'), self.activatedEvent)
+        super(Systray, self).__init__(QtGui.QIcon.fromTheme('scudcloud'), window)
+        self.connect(self, QtCore.SIGNAL('activated(QSystemTrayIcon::ActivationReason)'), self.activated_event)
         self.window = window
         self.setToolTip(Resources.APP_NAME)
         self.menu = QtGui.QMenu(self.window)
@@ -23,22 +23,22 @@ class Systray(QtGui.QSystemTrayIcon):
     def alert(self):
         if not self.urgent:
             self.urgent = True
-            self.setIcon(QtGui.QIcon().fromTheme('scudcloud-attention'))
+            self.setIcon(QtGui.QIcon.fromTheme('scudcloud-attention'))
 
     def stopAlert(self):
         self.urgent = False
-        self.setIcon(QtGui.QIcon().fromTheme('scudcloud'))
+        self.setIcon(QtGui.QIcon.fromTheme('scudcloud'))
 
-    def setCounter(self, i):
-        if 0 == i:
+    def set_counter(self, i):
+        if not i:
             if self.urgent:
-                self.setIcon(QtGui.QIcon().fromTheme('scudcloud-attention'))
+                self.setIcon(QtGui.QIcon.fromTheme('scudcloud-attention'))
             else:
-                self.setIcon(QtGui.QIcon().fromTheme('scudcloud'))
+                self.setIcon(QtGui.QIcon.fromTheme('scudcloud'))
         elif 0 < i < 10:
-            self.setIcon(QtGui.QIcon().fromTheme('scudcloud-attention-{}'.format(i)))
-        elif i > 9:
-            self.setIcon(QtGui.QIcon().fromTheme('scudcloud-attention-9-plus'))
+            self.setIcon(QtGui.QIcon.fromTheme('scudcloud-attention-{}'.format(i)))
+        else:
+            self.setIcon(QtGui.QIcon.fromTheme('scudcloud-attention-9-plus'))
 
     def restore(self):
         self.window.show()
@@ -50,6 +50,6 @@ class Systray(QtGui.QSystemTrayIcon):
         else:
             self.window.hide()
 
-    def activatedEvent(self, reason):
+    def activated_event(self, reason):
         if reason in [QtGui.QSystemTrayIcon.MiddleClick, QtGui.QSystemTrayIcon.Trigger]:
             self.toggle()

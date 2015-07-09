@@ -70,7 +70,7 @@ class Wrapper(QWebView):
             boot_data = self.page().currentFrame().evaluateJavaScript(self.js)
             self.window.quicklist(boot_data['channels'])
             self.window.teams(boot_data['teams'])
-            self.window.enableMenus(self.isConnected())
+            self.window.enable_menus(self.isConnected())
             # Save the loading team as default
             if url.endswith('/messages'):
                 self.window.settings.setValue('Domain', 'https://{}'.format(q_url.host()))
@@ -130,7 +130,7 @@ class Wrapper(QWebView):
 
     @QtCore.pyqtSlot(bool)
     def enableMenus(self, enabled):
-        self.window.enableMenus(enabled)
+        self.window.enable_menus(enabled)
 
     @QtCore.pyqtSlot(bool)
     def pasted(self, _):

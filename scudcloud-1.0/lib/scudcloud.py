@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+
 from PyQt4 import QtCore, QtGui, QtWebKit
 from PyQt4.Qt import QKeySequence
 from PyQt4.QtCore import QSettings
@@ -32,40 +34,42 @@ class ScudCloud(QtGui.QMainWindow):
         self.setWindowTitle('ScudCloud')
         self.settings_path = settings_path
         self.notifier = Notifier(Resources.APP_NAME, Resources.get_path('scudcloud.png'))
-        self.settings = QSettings(self.settings_path + '/scudcloud.cfg', QSettings.IniFormat)
+        self.settings = QSettings(os.path.join(self.settings_path, 'scudcloud.cfg'), QSettings.IniFormat)
         self.identifier = self.settings.value('Domain')
         if Unity is not None:
             self.launcher = Unity.LauncherEntry.get_for_desktop_id('scudcloud.desktop')
         else:
             self.launcher = DummyLauncher(self)
-        self.webSettings()
+        self.cookiesjar = None
+        self.zoom = 1
+        self.web_settings()
         self.leftPane = LeftPane(self)
-        webView = Wrapper(self)
-        webView.page().networkAccessManager().setCookieJar(self.cookiesjar)
+        web_view = Wrapper(self)
+        web_view.page().networkAccessManager().setCookieJar(self.cookiesjar)
         self.stackedWidget = QtGui.QStackedWidget()
-        self.stackedWidget.addWidget(webView)
-        centralWidget = QtGui.QWidget(self)
+        self.stackedWidget.addWidget(web_view)
+        central_widget = QtGui.QWidget(self)
         layout = QtGui.QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.addWidget(self.leftPane)
         layout.addWidget(self.stackedWidget)
-        centralWidget.setLayout(layout)
-        self.setCentralWidget(centralWidget)
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
         self.addMenu()
         self.tray = Systray(self)
         self.tray.show()
-        self.systray(ScudCloud.minimized)
+        self.toggle_close_to_tray(ScudCloud.minimized)
         self.installEventFilter(self)
         if self.identifier is None:
-            webView.load(QtCore.QUrl(Resources.SIGNIN_URL))
+            web_view.load(QtCore.QUrl(Resources.SIGNIN_URL))
         else:
-            webView.load(QtCore.QUrl(self.domain()))
-        webView.show()
+            web_view.load(QtCore.QUrl(self.domain()))
+        web_view.show()
 
-    def webSettings(self):
+    def web_settings(self):
         self.cookiesjar = PersistentCookieJar(self)
-        self.zoom = self.readZoom()
+        self.zoom = self.read_zoom()
         # Required by Youtube videos (HTML5 video support only on Qt5)
         QWebSettings.globalSettings().setAttribute(QWebSettings.PluginsEnabled, self.plugins)
         # We don't want Java
@@ -77,7 +81,7 @@ class ScudCloud(QtGui.QMainWindow):
         # Enabling Inspeclet only when --debug=True (requires more CPU usage)
         QWebSettings.globalSettings().setAttribute(QWebSettings.DeveloperExtrasEnabled, self.debug)
 
-    def toggleFullScreen(self):
+    def toggle_full_screen(self):
         if self.isFullScreen():
             self.showMaximized()
         else:
@@ -87,13 +91,13 @@ class ScudCloud(QtGui.QMainWindow):
         geometry = self.settings.value('geometry')
         if geometry is not None:
             self.restoreGeometry(geometry)
-        windowState = self.settings.value('windowState')
-        if windowState is not None:
-            self.restoreState(windowState)
+        window_state = self.settings.value('windowState')
+        if window_state is not None:
+            self.restoreState(window_state)
         else:
             self.showMaximized()
 
-    def systray(self, show=None):
+    def toggle_close_to_tray(self, show=None):
         if show is None:
             show = self.settings.value('Systray') == 'True'
         if show:
@@ -103,37 +107,37 @@ class ScudCloud(QtGui.QMainWindow):
             self.menus['file']['close'].setEnabled(False)
             self.settings.setValue('Systray', 'False')
 
-    def readZoom(self):
+    def read_zoom(self):
         default = 1
         if self.settings.value('Zoom') is not None:
             default = float(self.settings.value('Zoom'))
         return default
 
-    def setZoom(self, factor=1.):
+    def set_zoom(self, factor=1.):
         if factor > 0:
             for i in range(0, self.stackedWidget.count()):
                 widget = self.stackedWidget.widget(i)
                 widget.setZoomFactor(factor)
             self.settings.setValue('Zoom', factor)
 
-    def zoomIn(self):
-        self.setZoom(self.current().zoomFactor() + 0.1)
+    def zoom_in(self):
+        self.set_zoom(self.current().zoomFactor() + 0.1)
 
-    def zoomOut(self):
-        self.setZoom(self.current().zoomFactor() - 0.1)
+    def zoom_out(self):
+        self.set_zoom(self.current().zoomFactor() - 0.1)
 
-    def zoomReset(self):
-        self.setZoom()
+    def zoom_reset(self):
+        self.set_zoom()
 
     def addMenu(self):
         self.menus = {
             'file': {
-                'preferences': self.createAction('Preferences', self.current().preferences),
-                'systray': self.createAction('Close to Tray', self.systray, None, True),
-                'addTeam': self.createAction('Sign in to Another Team', self.current().addTeam),
-                'signout': self.createAction('Signout', self.current().logout),
-                'close': self.createAction('Close', self.close, QKeySequence.Close),
-                'exit': self.createAction('Quit', self.exit, QKeySequence.Quit)
+                'preferences': self.create_action('Preferences', self.current().preferences),
+                'systray': self.create_action('Close to Tray', self.toggle_close_to_tray, None, True),
+                'addTeam': self.create_action('Sign in to Another Team', self.current().addTeam),
+                'signout': self.create_action('Signout', self.current().logout),
+                'close': self.create_action('Close', self.close, QKeySequence.Close),
+                'exit': self.create_action('Quit', self.exit, QKeySequence.Quit)
             },
             'edit': {
                 'undo': self.current().pageAction(QtWebKit.QWebPage.Undo),
@@ -146,61 +150,61 @@ class ScudCloud(QtGui.QMainWindow):
                 'reload': self.current().pageAction(QtWebKit.QWebPage.Reload)
             },
             'view': {
-                'zoomin': self.createAction('Zoom In', self.zoomIn, QKeySequence.ZoomIn),
-                'zoomout': self.createAction('Zoom Out', self.zoomOut, QKeySequence.ZoomOut),
-                'reset': self.createAction('Reset', self.zoomReset, QtCore.Qt.CTRL + QtCore.Qt.Key_0),
-                'fullscreen': self.createAction('Toggle Full Screen', self.toggleFullScreen, QtCore.Qt.Key_F11)
+                'zoomin': self.create_action('Zoom In', self.zoom_in, QKeySequence.ZoomIn),
+                'zoomout': self.create_action('Zoom Out', self.zoom_out, QKeySequence.ZoomOut),
+                'reset': self.create_action('Reset', self.zoom_reset, QtCore.Qt.CTRL + QtCore.Qt.Key_0),
+                'fullscreen': self.create_action('Toggle Full Screen', self.toggle_full_screen, QtCore.Qt.Key_F11)
             },
             'help': {
-                'help': self.createAction('Help and Feedback', self.current().help, QKeySequence.HelpContents),
-                'center': self.createAction('Slack Help Center', self.current().helpCenter),
-                'about': self.createAction('About', self.current().about)
+                'help': self.create_action('Help and Feedback', self.current().help, QKeySequence.HelpContents),
+                'center': self.create_action('Slack Help Center', self.current().helpCenter),
+                'about': self.create_action('About', self.current().about)
             }
         }
         menu = self.menuBar()
-        fileMenu = menu.addMenu('&File')
-        fileMenu.addAction(self.menus['file']['preferences'])
-        fileMenu.addAction(self.menus['file']['systray'])
-        fileMenu.addSeparator()
-        fileMenu.addAction(self.menus['file']['addTeam'])
-        fileMenu.addAction(self.menus['file']['signout'])
-        fileMenu.addSeparator()
-        fileMenu.addAction(self.menus['file']['close'])
-        fileMenu.addAction(self.menus['file']['exit'])
-        editMenu = menu.addMenu('&Edit')
-        editMenu.addAction(self.menus['edit']['undo'])
-        editMenu.addAction(self.menus['edit']['redo'])
-        editMenu.addSeparator()
-        editMenu.addAction(self.menus['edit']['cut'])
-        editMenu.addAction(self.menus['edit']['copy'])
-        editMenu.addAction(self.menus['edit']['paste'])
-        editMenu.addSeparator()
-        editMenu.addAction(self.menus['edit']['back'])
-        editMenu.addAction(self.menus['edit']['forward'])
-        editMenu.addAction(self.menus['edit']['reload'])
-        viewMenu = menu.addMenu('&View')
-        viewMenu.addAction(self.menus['view']['zoomin'])
-        viewMenu.addAction(self.menus['view']['zoomout'])
-        viewMenu.addAction(self.menus['view']['reset'])
-        viewMenu.addSeparator()
-        viewMenu.addAction(self.menus['view']['fullscreen'])
-        helpMenu = menu.addMenu('&Help')
-        helpMenu.addAction(self.menus['help']['help'])
-        helpMenu.addAction(self.menus['help']['center'])
-        helpMenu.addSeparator()
-        helpMenu.addAction(self.menus['help']['about'])
-        self.enableMenus(False)
-        showSystray = self.settings.value('Systray') == 'True'
-        self.menus['file']['systray'].setChecked(showSystray)
-        self.menus['file']['close'].setEnabled(showSystray)
+        file_menu = menu.addMenu('&File')
+        file_menu.addAction(self.menus['file']['preferences'])
+        file_menu.addAction(self.menus['file']['systray'])
+        file_menu.addSeparator()
+        file_menu.addAction(self.menus['file']['addTeam'])
+        file_menu.addAction(self.menus['file']['signout'])
+        file_menu.addSeparator()
+        file_menu.addAction(self.menus['file']['close'])
+        file_menu.addAction(self.menus['file']['exit'])
+        edit_menu = menu.addMenu('&Edit')
+        edit_menu.addAction(self.menus['edit']['undo'])
+        edit_menu.addAction(self.menus['edit']['redo'])
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.menus['edit']['cut'])
+        edit_menu.addAction(self.menus['edit']['copy'])
+        edit_menu.addAction(self.menus['edit']['paste'])
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.menus['edit']['back'])
+        edit_menu.addAction(self.menus['edit']['forward'])
+        edit_menu.addAction(self.menus['edit']['reload'])
+        view_menu = menu.addMenu('&View')
+        view_menu.addAction(self.menus['view']['zoomin'])
+        view_menu.addAction(self.menus['view']['zoomout'])
+        view_menu.addAction(self.menus['view']['reset'])
+        view_menu.addSeparator()
+        view_menu.addAction(self.menus['view']['fullscreen'])
+        help_menu = menu.addMenu('&Help')
+        help_menu.addAction(self.menus['help']['help'])
+        help_menu.addAction(self.menus['help']['center'])
+        help_menu.addSeparator()
+        help_menu.addAction(self.menus['help']['about'])
+        self.enable_menus(False)
+        show_systray = self.settings.value('Systray') == 'True'
+        self.menus['file']['systray'].setChecked(show_systray)
+        self.menus['file']['close'].setEnabled(show_systray)
 
-    def enableMenus(self, enabled):
+    def enable_menus(self, enabled):
         self.menus['file']['preferences'].setEnabled(bool(enabled))
         self.menus['file']['addTeam'].setEnabled(bool(enabled))
         self.menus['file']['signout'].setEnabled(bool(enabled))
         self.menus['help']['help'].setEnabled(bool(enabled))
 
-    def createAction(self, text, slot, shortcut=None, checkable=False):
+    def create_action(self, text, slot, shortcut=None, checkable=False):
         action = QtGui.QAction(text, self)
         if shortcut is not None:
             action.setShortcut(shortcut)
@@ -229,8 +233,8 @@ class ScudCloud(QtGui.QMainWindow):
                 except:
                     self.leftPane.addTeam(t['id'], t['team_name'], t['team_url'], '', t == teams[0])
 
-    def switchTo(self, url):
-        qUrl = QtCore.QUrl(url)
+    def switch_to(self, url):
+        q_url = QtCore.QUrl(url)
         index = -1
         for i in range(0, self.stackedWidget.count()):
             if self.stackedWidget.widget(i).url().toString().startswith(url):
@@ -239,16 +243,16 @@ class ScudCloud(QtGui.QMainWindow):
         if index != -1:
             self.stackedWidget.setCurrentIndex(index)
         else:
-            webView = Wrapper(self)
-            webView.page().networkAccessManager().setCookieJar(self.cookiesjar)
-            webView.load(qUrl)
-            webView.show()
-            self.stackedWidget.addWidget(webView)
-            self.stackedWidget.setCurrentWidget(webView)
+            web_view = Wrapper(self)
+            web_view.page().networkAccessManager().setCookieJar(self.cookiesjar)
+            web_view.load(q_url)
+            web_view.show()
+            self.stackedWidget.addWidget(web_view)
+            self.stackedWidget.setCurrentWidget(web_view)
         self.quicklist(self.current().listChannels())
-        self.enableMenus(self.current().isConnected())
+        self.enable_menus(self.current().isConnected())
         # Save the last used team as default
-        self.settings.setValue('Domain', 'https://{}'.format(qUrl.host()))
+        self.settings.setValue('Domain', 'https://{}'.format(q_url.host()))
 
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.ActivationChange and self.isActiveWindow():
@@ -275,8 +279,8 @@ class ScudCloud(QtGui.QMainWindow):
                 elif event.key() == QtCore.Qt.Key_9:
                     self.leftPane.click(8)
             # Ctrl + Shift + <key>
-            if (QtGui.QApplication().keyboardModifiers() & QtCore.Qt.ShiftModifier) and (
-                QtGui.QApplication().keyboardModifiers() & QtCore.Qt.ShiftModifier
+            if (QtGui.QApplication.keyboardModifiers() & QtCore.Qt.ShiftModifier) and (
+                QtGui.QApplication.keyboardModifiers() & QtCore.Qt.ShiftModifier
             ):
                 if event.key() == QtCore.Qt.Key_V: self.current().createSnippet()
         return QtGui.QMainWindow.eventFilter(self, obj, event)
@@ -285,7 +289,7 @@ class ScudCloud(QtGui.QMainWindow):
         self.launcher.set_property('urgent', False)
         self.tray.stopAlert()
 
-    def titleChanged(self):
+    def title_changed(self):
         self.setWindowTitle(self.current().title())
 
     def closeEvent(self, event):
@@ -343,9 +347,9 @@ class ScudCloud(QtGui.QMainWindow):
             self.alert()
         if 0 == total:
             self.launcher.set_property('count_visible', False)
-            self.tray.setCounter(0)
+            self.tray.set_counter(0)
         else:
-            self.tray.setCounter(total)
+            self.tray.set_counter(total)
             self.launcher.set_property('count', total)
             self.launcher.set_property('count_visible', True)
         self.messages = total

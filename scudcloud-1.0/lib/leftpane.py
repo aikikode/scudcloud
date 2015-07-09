@@ -50,7 +50,7 @@ class LeftPane(QWebView):
 
     @QtCore.pyqtSlot(str)
     def switchTo(self, url):
-        self.window.switchTo(url)
+        self.window.switch_to(url)
 
     def contextMenuEvent(self, event):
         pass
