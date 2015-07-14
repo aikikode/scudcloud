@@ -58,8 +58,8 @@ class ScudCloud(QtGui.QMainWindow):
         self.setCentralWidget(central_widget)
         self.addMenu()
         self.tray = Systray(self)
-        self.tray.show()
-        self.toggle_close_to_tray(ScudCloud.minimized)
+        self.toggle_close_to_tray()
+        self.toggle_show_tray(ScudCloud.minimized)
         self.installEventFilter(self)
         if self.identifier is None:
             web_view.load(QtCore.QUrl(Resources.SIGNIN_URL))
@@ -97,15 +97,28 @@ class ScudCloud(QtGui.QMainWindow):
         else:
             self.showMaximized()
 
+    def is_systray_shown(self):
+        return self.settings.value('Systray') == 'True'
+
     def toggle_close_to_tray(self, show=None):
         if show is None:
-            show = self.settings.value('Systray') == 'True'
+            show = self.settings.value('SystrayClose') == 'True'
         if show:
             self.menus['file']['close'].setEnabled(True)
-            self.settings.setValue('Systray', 'True')
+            self.settings.setValue('SystrayClose', 'True')
         else:
             self.menus['file']['close'].setEnabled(False)
+            self.settings.setValue('SystrayClose', 'False')
+
+    def toggle_show_tray(self, show=None):
+        if show is None:
+            show = self.is_systray_shown()
+        if show:
+            self.settings.setValue('Systray', 'True')
+            self.tray.show()
+        else:
             self.settings.setValue('Systray', 'False')
+            self.tray.hide()
 
     def read_zoom(self):
         default = 1
@@ -133,7 +146,8 @@ class ScudCloud(QtGui.QMainWindow):
         self.menus = {
             'file': {
                 'preferences': self.create_action('Preferences', self.current().preferences),
-                'systray': self.create_action('Close to Tray', self.toggle_close_to_tray, None, True),
+                'systray': self.create_action('Always Show Tray Icon', self.toggle_show_tray, None, True),
+                'systray_close': self.create_action('Close to Tray', self.toggle_close_to_tray, None, True),
                 'addTeam': self.create_action('Sign in to Another Team', self.current().addTeam),
                 'signout': self.create_action('Signout', self.current().logout),
                 'close': self.create_action('Close', self.close, QKeySequence.Close),
@@ -164,7 +178,9 @@ class ScudCloud(QtGui.QMainWindow):
         menu = self.menuBar()
         file_menu = menu.addMenu('&File')
         file_menu.addAction(self.menus['file']['preferences'])
+        file_menu.addSeparator()
         file_menu.addAction(self.menus['file']['systray'])
+        file_menu.addAction(self.menus['file']['systray_close'])
         file_menu.addSeparator()
         file_menu.addAction(self.menus['file']['addTeam'])
         file_menu.addAction(self.menus['file']['signout'])
@@ -194,9 +210,11 @@ class ScudCloud(QtGui.QMainWindow):
         help_menu.addSeparator()
         help_menu.addAction(self.menus['help']['about'])
         self.enable_menus(False)
+        systray_close = self.settings.value('SystrayClose') == 'True'
+        self.menus['file']['systray_close'].setChecked(systray_close)
+        self.menus['file']['close'].setEnabled(systray_close)
         show_systray = self.settings.value('Systray') == 'True'
         self.menus['file']['systray'].setChecked(show_systray)
-        self.menus['file']['close'].setEnabled(show_systray)
 
     def enable_menus(self, enabled):
         self.menus['file']['preferences'].setEnabled(bool(enabled))
@@ -293,8 +311,9 @@ class ScudCloud(QtGui.QMainWindow):
         self.setWindowTitle(self.current().title())
 
     def closeEvent(self, event):
-        if not self.forceClose and self.settings.value('Systray') == 'True':
+        if not self.forceClose and self.settings.value('SystrayClose') == 'True':
             self.hide()
+            self.tray.show()
             event.ignore()
         else:
             self.cookiesjar.save()

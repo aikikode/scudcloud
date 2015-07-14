@@ -43,6 +43,8 @@ class Systray(QtGui.QSystemTrayIcon):
     def restore(self):
         self.window.show()
         self.stopAlert()
+        if not self.window.is_systray_shown():
+            self.hide()
 
     def toggle(self):
         if self.window.isHidden() or self.window.isMinimized() or not self.window.isActiveWindow():
