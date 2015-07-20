@@ -213,7 +213,7 @@ class ScudCloud(QtGui.QMainWindow):
         systray_close = self.settings.value('SystrayClose') == 'True'
         self.menus['file']['systray_close'].setChecked(systray_close)
         self.menus['file']['close'].setEnabled(systray_close)
-        show_systray = self.settings.value('Systray') == 'True'
+        show_systray = self.is_systray_shown()
         self.menus['file']['systray'].setChecked(show_systray)
 
     def enable_menus(self, enabled):
@@ -300,7 +300,8 @@ class ScudCloud(QtGui.QMainWindow):
             if (QtGui.QApplication.keyboardModifiers() & QtCore.Qt.ShiftModifier) and (
                 QtGui.QApplication.keyboardModifiers() & QtCore.Qt.ShiftModifier
             ):
-                if event.key() == QtCore.Qt.Key_V: self.current().createSnippet()
+                if event.key() == QtCore.Qt.Key_V:
+                    self.current().createSnippet()
         return QtGui.QMainWindow.eventFilter(self, obj, event)
 
     def focusInEvent(self, event):

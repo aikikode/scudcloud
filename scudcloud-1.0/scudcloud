@@ -49,7 +49,7 @@ def parse_arguments():
     from os.path import expanduser
 
     if 'XDG_CONFIG_HOME' in os.environ and os.environ['XDG_CONFIG_HOME']:
-        default_confdir = '{}/scudcloud'.format(os.environ['XDG_CONFIG_HOME'])
+        default_confdir = os.path.join(os.environ['XDG_CONFIG_HOME'], 'scudcloud')
     else:
         default_confdir = CONFIG_DIR
     parser = ArgumentParser()
