@@ -145,10 +145,10 @@ class ScudCloud(QtGui.QMainWindow):
     def addMenu(self):
         self.menus = {
             'file': {
-                'preferences': self.create_action('Preferences', self.current().preferences),
+                'preferences': self.create_action('Preferences', lambda : self.current().preferences()),
                 'systray': self.create_action('Always Show Tray Icon', self.toggle_show_tray, None, True),
                 'systray_close': self.create_action('Close to Tray', self.toggle_close_to_tray, None, True),
-                'addTeam': self.create_action('Sign in to Another Team', self.current().addTeam),
+                'addTeam': self.create_action('Sign in to Another Team', lambda : self.current().addTeam()),
                 'signout': self.create_action('Signout', self.current().logout),
                 'close': self.create_action('Close', self.close, QKeySequence.Close),
                 'exit': self.create_action('Quit', self.exit, QKeySequence.Quit)
@@ -172,7 +172,7 @@ class ScudCloud(QtGui.QMainWindow):
             'help': {
                 'help': self.create_action('Help and Feedback', self.current().help, QKeySequence.HelpContents),
                 'center': self.create_action('Slack Help Center', self.current().helpCenter),
-                'about': self.create_action('About', self.current().about)
+                'about': self.create_action('About', lambda : self.current().about())
             }
         }
         menu = self.menuBar()
@@ -305,6 +305,7 @@ class ScudCloud(QtGui.QMainWindow):
         return QtGui.QMainWindow.eventFilter(self, obj, event)
 
     def focusInEvent(self, event):
+        self.count()
         self.launcher.set_property('urgent', False)
         self.tray.stopAlert()
 
