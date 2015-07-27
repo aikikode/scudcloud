@@ -5,8 +5,8 @@ except ImportError:
     import notify2
     Notify = None
 
-class Notifier(object):
 
+class Notifier(object):
     def __init__(self, app_name, icon):
         self.icon = icon
         try:
@@ -18,8 +18,7 @@ class Notifier(object):
                 self.notifier = notify2
             self.enabled = True
         except DBusException:
-            print("WARNING: No notification daemon found! "
-                  "Notifications will be ignored.")
+            print('WARNING: No notification daemon found! Notifications will be ignored.')
             self.enabled = False
 
     def notify(self, title, message, icon=None):
