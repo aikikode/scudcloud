@@ -149,7 +149,7 @@ class ScudCloud(QtGui.QMainWindow):
                 'systray': self.create_action('Always Show Tray Icon', self.toggle_show_tray, None, True),
                 'systray_close': self.create_action('Close to Tray', self.toggle_close_to_tray, None, True),
                 'addTeam': self.create_action('Sign in to Another Team', lambda : self.current().addTeam()),
-                'signout': self.create_action('Signout', self.current().logout),
+                'signout': self.create_action('Signout', lambda : self.current().logout()),
                 'close': self.create_action('Close', self.close, QKeySequence.Close),
                 'exit': self.create_action('Quit', self.exit, QKeySequence.Quit)
             },
